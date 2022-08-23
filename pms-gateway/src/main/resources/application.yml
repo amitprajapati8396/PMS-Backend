@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: GATEWAY-SERVICE  
+  cloud:
+    gateway:
+      routes:
+        - id: allergy-service
+          uri: lb://ALLERGY-SERVICE
+          predicates:
+            - Path= /allergy/**  
+        - id: diagnosis-service
+          uri: lb://DIAGNOSIS-SERVICE
+          predicates:
+            - Path= /diagnosis/**     
+          filters:
+          - name: CircuitBreaker
+            args:
+              name: diagnosis-service
+              fallbackuri: forward:/diagnosisFallback           
+        - id: procedure-service
+          uri: lb://PROCEDURE-SERVICE
+          predicates:
+            - Path= /procedure/**
+        - id: medication-service
+          uri: lb://MEDICATION-SERVICE
+          predicates:
+            - Path= /medication/**
+        - id: management-service
+          uri: lb://MANAGEMENT-SERVICE
+          predicates:
+            - Path=/management/**
+        - id: schedule-service
+          uri: lb://SCHEDULE-SERVICE
+          predicates:
+            - Path=/schedule/**
+        - id: visit-service
+          uri: lb://VISIT-SERVICE
+          predicates:
+            - Path=/visit/**
+          filters:
+          - name: CircuitBreaker
+            args:
+              name: medication-service
+              fallbackuri: forward:/medicationFallback  
+                    
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    instance: localhost
+server:
+  port: 8989
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: hystrix.stream
+hystrix:
+  command:
+    fallbackcmd:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 5000
